@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Complaint Solution</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <style>
+        /* --- Solution Section Styling --- */
+        .solution-section {
+            background-color: #f1f5f9;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #1a73e8;
+        }
+
+        .solution-section h3 {
+            margin-top: 0;
+            color: #1a73e8;
+            font-size: 1.1rem;
+        }
+
+        .solution-section p {
+            margin: 8px 0 0 0;
+            line-height: 1.6;
+        }
+
+        .solution.show {
+            display: block;
+        }
+
+        .loading {
+            font-style: italic;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>🔧 Complaint Solution System</h2>
+        <p class="subtitle">AI-powered complaint resolution using pattern analysis and Ollama LLM</p>
+
+        <form id="complaintForm" method="post" action="/get_solution">
+            <!-- Required Fields -->
+            <div class="form-group">
+                <label for="msisdn">MSISDN <span class="required">*</span></label>
+                <input type="text" id="msisdn" name="msisdn" required placeholder="Enter customer mobile number">
+            </div>
+
+            <div class="form-group">
+                <label for="complaint">Issue Description <span class="required">*</span></label>
+                <textarea id="complaint" name="complaint" required
+                    placeholder="Describe the issue or complaint in detail"></textarea>
+            </div>
+
+            <!-- Technical Details Section -->
+            <div class="section-header">📋 Technical Details</div>
+
+            <div class="form-group">
+                <label for="device_type_settings_vpn_apn">Device / Settings / VPN / APN</label>
+                <input type="text" id="device_type_settings_vpn_apn" name="device_type_settings_vpn_apn"
+                    placeholder="e.g., Android Phone, iPhone, Router, VPN settings">
+            </div>
+
+            <div class="form-group">
+                <label for="signal_strength">Signal Strength</label>
+                <select id="signal_strength" name="signal_strength">
+                    <option value="">Select signal strength</option>
+                    <option value="Excellent">Excellent (4-5 bars)</option>
+                    <option value="Good">Good (3-4 bars)</option>
+                    <option value="Fair">Fair (2-3 bars)</option>
+                    <option value="Weak">Weak (1-2 bars)</option>
+                    <option value="No Signal">No Signal (0 bars)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="quality_of_signal">Quality of Signal</label>
+                <select id="quality_of_signal" name="quality_of_signal">
+                    <option value="">Select signal quality</option>
+                    <option value="Clear">Clear - No issues</option>
+                    <option value="Good">Good - Minor issues</option>
+                    <option value="Fair">Fair - Some problems</option>
+                    <option value="Poor">Poor - Frequent issues</option>
+                    <option value="Intermittent">Intermittent - On/off problems</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="site_kpi_alarm">Site KPI / Alarm</label>
+                <input type="text" id="site_kpi_alarm" name="site_kpi_alarm"
+                    placeholder="e.g., Site unavailability, KLPOR5, KLPET1, Cell outage">
+            </div>
+
+            <div class="form-group">
+                <label for="past_data_analysis">Past Data Analysis</label>
+                <textarea id="past_data_analysis" name="past_data_analysis" rows="2"
+                    placeholder="Previous similar issues, patterns, or analysis"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="indoor_outdoor_coverage_issue">Coverage Issue Type</label>
+                <select id="indoor_outdoor_coverage_issue" name="indoor_outdoor_coverage_issue">
+                    <option value="">Select coverage type</option>
+                    <option value="Indoor">Indoor Coverage Issue</option>
+                    <option value="Outdoor">Outdoor Coverage Issue</option>
+                    <option value="Both">Both Indoor and Outdoor</option>
+                    <option value="None">No Coverage Issue</option>
+                </select>
+            </div>
+
+            <!-- Location Information Section -->
+            <div class="section-header">📍 Location Information</div>
+
+            <div class="form-group">
+                <label for="location">Location (Area/City)</label>
+                <input type="text" id="location" name="location"
+                    placeholder="e.g., Karachi, Lahore, Colombo, Downtown Area">
+            </div>
+
+            <div class="form-group">
+                <label for="longitude">Longitude</label>
+                <input type="number" id="longitude" name="longitude" step="any" placeholder="e.g., 67.0104">
+            </div>
+
+            <div class="form-group">
+                <label for="latitude">Latitude</label>
+                <input type="number" id="latitude" name="latitude" step="any" placeholder="e.g., 24.8614">
+            </div>
+
+            <button type="submit" id="submitBtn" class="submit-btn">🔍 Get Solution</button>
+        </form>
+
+        <div id="solution" class="solution"></div>
+
+        <!-- Smart Complaint Logic Info -->
+        <div class="info-box">
+            <h4>🤖 Smart Complaint Resolution Logic</h4>
+            <ul>
+                <li><strong>Exact Match:</strong> Same complaint + same conditions → Returns exact solution</li>
+                <li><strong>Pattern Analysis:</strong> Similar complaint + different conditions → Analyzes historical patterns</li>
+                <li><strong>New Complaint:</strong> Completely new issue → Uses Ollama LLM with context</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- --- Helper Function to Format LLM Text --- -->
+    <script>
+        function formatSolutionText(solutionText) {
+            if (!solutionText) return "<p>No solution generated.</p>";
+
+            const parts = solutionText.split(/\d+\./).map(s => s.trim()).filter(s => s);
+
+            let html = "";
+            parts.forEach((part, index) => {
+                let heading = "";
+                if (index === 0) heading = "Primary Solution";
+                else if (part.toLowerCase().includes("alternative")) heading = `Alternative Solution ${index}`;
+                else if (part.toLowerCase().includes("additional")) heading = "Additional Recommendation";
+                else heading = `Solution ${index+1}`;
+
+                html += `
+                    <div class="solution-section">
+                        <h3>${heading}</h3>
+                        <p>${part}</p>
+                    </div>
+                `;
+            });
+
+            return html;
+        }
+    </script>
+
+    <!-- --- Form Submission and Fetch --- -->
+    <script>
+        document.getElementById('complaintForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '🔄 Analyzing...';
+            submitBtn.disabled = true;
+
+            const formData = {
+                msisdn: document.getElementById('msisdn').value,
+                complaint: document.getElementById('complaint').value,
+                device_type_settings_vpn_apn: document.getElementById('device_type_settings_vpn_apn').value || null,
+                signal_strength: document.getElementById('signal_strength').value || null,
+                quality_of_signal: document.getElementById('quality_of_signal').value || null,
+                site_kpi_alarm: document.getElementById('site_kpi_alarm').value || null,
+                past_data_analysis: document.getElementById('past_data_analysis').value || null,
+                indoor_outdoor_coverage_issue: document.getElementById('indoor_outdoor_coverage_issue').value || null,
+                location: document.getElementById('location').value || null,
+                longitude: document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
+                latitude: document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null
+            };
+
+            const solutionDiv = document.getElementById('solution');
+            solutionDiv.innerHTML = '<div class="loading">🤖 Analyzing complaint and generating solution...</div>';
+            solutionDiv.className = 'solution show';
+
+            try {
+                const response = await fetch('/api/solution', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.solution) {
+                    solutionDiv.innerHTML = formatSolutionText(data.solution);
+                } else if (data.error) {
+                    solutionDiv.innerHTML = `<strong>❌ Error:</strong> ${data.error}`;
+                } else {
+                    solutionDiv.innerHTML = `<strong>⚠️ No solution found.</strong>`;
+                }
+
+            } catch (err) {
+                solutionDiv.innerHTML = '<strong>❌ Network Error:</strong> Unable to connect to the server.';
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>
